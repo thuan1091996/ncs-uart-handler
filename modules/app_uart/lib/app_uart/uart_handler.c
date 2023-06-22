@@ -84,6 +84,13 @@ void app_uart_async_callback(const struct device *uart_dev,
 			new_message.data.rx._source_buf = evt->data.rx.buf;
 			uart_push_event(&new_message);
 			rx_bytes_in_buffers += evt->data.rx.len;
+		//Dump the receive buffer
+		LOG_HEXDUMP_DBG(evt->data.rx.buf + evt->data.rx.offset, evt->data.rx.len, "RX");
+		if (evt->data.rx.buf[evt->data.rx.offset + evt->data.rx.len -1] == '\n')
+		{
+			LOG_INF("End line detected, size: %d", new_message.data.rx.length);
+			uart_rx_disable(dev_uart);
+		}
 			break;
 		
 		case UART_RX_BUF_REQUEST:
@@ -118,7 +125,7 @@ void app_uart_async_callback(const struct device *uart_dev,
 				LOG_DBG("RX DIS. Re-enabling (%i)", allocated_slabs);
 				int ret = uart_rx_enable(dev_uart, new_rx_buf, UART_RX_SLAB_SIZE, CONFIG_APP_UART_RX_TIMEOUT_US);
 				if(ret) {
-					printk("UART rx enable error in disable callback: %d\n", ret);
+					LOG_ERR("UART rx enable error in disable callback: %d\n", ret);
 					return;
 				}
 			} else {
